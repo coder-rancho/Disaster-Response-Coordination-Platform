@@ -3,6 +3,7 @@ import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
+import disasterRoutes from './routes/disaster.routes.js';
 
 dotenv.config();
 
@@ -19,10 +20,19 @@ const io = new Server(httpServer, {
 app.use(cors());
 app.use(express.json());
 
-// Basic route
+// Attach socket.io to request object for controllers
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
+
+// Routes
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to Disaster Response Coordination Platform API' });
 });
+
+// Use disaster routes
+app.use('/api/disasters', disasterRoutes);
 
 // WebSocket connection
 io.on('connection', (socket) => {
