@@ -73,6 +73,10 @@ export default function DisasterList() {
     navigate(`/reports/${disasterId}`);
   };
 
+  const navigateToResources = (disasterId) => {
+    navigate(`/resources/${disasterId}`);
+  };
+
   if (loading) {
     return <div className="text-center">Loading...</div>;
   }
@@ -118,6 +122,12 @@ export default function DisasterList() {
                   See Reports
                 </button>
                 <button
+                  onClick={() => navigateToResources(disaster.id)}
+                  className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                >
+                  See Resources
+                </button>
+                <button
                   onClick={() => handleDelete(disaster.id)}
                   className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
                 >
@@ -132,13 +142,14 @@ export default function DisasterList() {
                   key={index}
                   className="px-2 py-1 text-sm bg-blue-100 text-blue-800 rounded-full"
                 >
-                  {tag}
+                  {tag}, &nbsp;
                 </span>
               ))}
             </div>
             <div className="mt-2 text-sm text-gray-500">
               Created: {new Date(disaster.created_at).toLocaleString()}
             </div>
+            <hr />
           </div>
         ))}
       </div>
