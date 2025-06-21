@@ -1,58 +1,8 @@
 import { supabase } from '../config/supabase.js';
-import axios from 'axios';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { extractLocation } from '../utils/locationExtractor.js';
+import { getCoordinates } from '../utils/geocoder.js';
 
 /* Copilot generated this */
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-const extractLocation = async (description) => {
-  try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-
-    const prompt = `Extract the main location from this disaster description. Return ONLY the location name, nothing else.
-    If no specific location is found, respond with "Unknown location".
-    
-    Description: "${description}"`;
-
-    const result = await model.generateContent(prompt);
-    const location = result.response.text().trim();
-    
-    if (location === "Unknown location") {
-      throw new Error('No location found in description');
-    }
-
-    return location;
-  } catch (error) {
-    console.error('Location extraction error:', error);
-    throw new Error('Failed to extract location from description');
-  }
-};
-
-const getCoordinates = async (locationName) => {
-  try {
-    const response = await axios.get(`https://nominatim.openstreetmap.org/search`, {
-      params: {
-        q: locationName,
-        format: 'jsonv2',
-        limit: 1
-      },
-      headers: {
-        'User-Agent': 'Disaster-Response-Platform/1.0'
-      }
-    });
-
-    if (response.data && response.data.length > 0) {
-      const { lat, lon } = response.data[0];
-      // Return in PostGIS format
-      return `SRID=4326;POINT(${lon} ${lat})`;
-    }
-    throw new Error('Location not found');
-  } catch (error) {
-    console.error('Geocoding error:', error);
-    throw new Error('Failed to geocode location');
-  }
-};
 export const disasterController = {
   // Create a new disaster
   async create(req, res) {

@@ -110,12 +110,6 @@ export default function DisasterList() {
                 <h3 className="text-xl font-semibold">{disaster.title}</h3>
                 <p className="text-gray-600">{disaster.location_name}</p>
               </div>
-              <button
-                onClick={() => handleDelete(disaster.id)}
-                className="text-red-600 hover:text-red-800"
-              >
-                Delete
-              </button>
             </div>
             
             <p className="mt-2 text-gray-700">{disaster.description}</p>
@@ -134,6 +128,13 @@ export default function DisasterList() {
             <div className="mt-2 text-sm text-gray-500">
               Reported by: {disaster.owner_id}
             </div>
+
+            <button
+                onClick={() => handleDelete(disaster.id)}
+                className="text-red-600 hover:text-red-800"
+              >
+                Delete
+              </button>
           </div>
         ))}
 
