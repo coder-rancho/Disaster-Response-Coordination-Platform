@@ -74,35 +74,82 @@ export const resourceController = {
   // Get nearby resources using PostGIS
   async getNearby(req, res) {
     try {
-      const { disaster_id } = req.params;
-      const { latitude, longitude, distance = 10000 } = req.query; // distance in meters
+      const { 
+        location_name, // Optional: location name to search around
+        latitude, // Optional: latitude for direct coordinate search
+        longitude, // Optional: longitude for direct coordinate search
+        distance = 10000, // Default: 10km
+        type, // Optional: filter by resource type
+        limit = 50, // Default: 50 results
+        disaster_id // Optional: filter by disaster
+      } = req.query;
 
-      // First verify the disaster exists and get its location if no coordinates provided
-      const { data: disaster, error: disasterError } = await supabase
-        .from('disasters')
-        .select('location')
-        .eq('id', disaster_id)
-        .single();
-
-      if (disasterError || !disaster) {
-        return res.status(404).json({ error: 'Disaster not found' });
+      // We need either coordinates or a location name
+      if (!latitude || !longitude) {
+        if (!location_name) {
+          return res.status(400).json({ 
+            error: 'Either coordinates (latitude & longitude) or a location name is required' 
+          });
+        }
       }
 
-      // Use provided coordinates or disaster's location
-      const point = latitude && longitude 
-        ? `SRID=4326;POINT(${longitude} ${latitude})`
-        : disaster.location;
+      let searchPoint;
+      let searchLocationName;
 
-      // Use the find_nearby_resources function
-      const { data, error } = await supabase
-        .rpc('find_nearby_resources', {
-          disaster_point: point,
-          distance_meters: parseInt(distance)
+      // Determine search point based on provided parameters
+      if (latitude && longitude) {
+        // Use provided coordinates
+        searchPoint = `SRID=4326;POINT(${longitude} ${latitude})`;
+        searchLocationName = `${latitude},${longitude}`;
+      } else if (location_name) {
+        // If location_name provided, get its coordinates
+        try {
+          searchPoint = await getCoordinates(location_name);
+          searchLocationName = location_name;
+        } catch (err) {
+          return res.status(400).json({ error: 'Could not geocode provided location' });
+        }
+      } else {
+        return res.status(400).json({ 
+          error: 'Either coordinates (latitude & longitude) or a location name is required' 
         });
+      }
+
+      let query = supabase.rpc('find_nearby_resources', { 
+        // disaster_point: `SRID=4326;POINT(${searchPoint.coordinates[0]} ${searchPoint.coordinates[1]})`,
+        disaster_point: searchPoint,
+        distance_meters: distance
+      });
+
+      // Add type filter if provided
+      if (type) {
+        query = query.eq('type', type);
+      }
+
+      // Add disaster filter if provided
+      if (disaster_id) {
+        query = query.eq('disaster_id', disaster_id);
+      }
+
+      // Get results ordered by distance
+      const { data, error, count } = await query
+        .order('distance')
+        .limit(limit);
 
       if (error) throw error;
 
-      res.json(data);
+      // Enhance response with metadata
+      const response = {
+        data,
+        metadata: {
+          total: count,
+          search_location: searchLocationName,
+          distance_km: distance / 1000,
+          type_filter: type || 'all'
+        }
+      };
+
+      res.json(response);
     } catch (error) {
       console.error('Error fetching nearby resources:', error);
       res.status(400).json({ error: error.message });

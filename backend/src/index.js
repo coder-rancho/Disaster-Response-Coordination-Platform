@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import disasterRoutes from './routes/disaster.routes.js';
 import reportRoutes from './routes/report.routes.js';
 import resourceRoutes from './routes/resource.routes.js';
+import resourceStandaloneRoutes from './routes/resource.standalone.routes.js';
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ app.use((req, res, next) => {
 });
 
 // Routes
+app.use('/api/resources', resourceStandaloneRoutes);
 app.use('/api/disasters/:disaster_id/resources', resourceRoutes);
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to Disaster Response Coordination Platform API' });
