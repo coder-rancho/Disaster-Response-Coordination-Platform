@@ -4,7 +4,6 @@ import { disasterService } from '../services/disaster.service';
 export default function DisasterForm({ onDisasterCreated }) {
   const [formData, setFormData] = useState({
     title: '',
-    location_name: '',
     description: '',
     tags: ''
   });
@@ -80,21 +79,7 @@ export default function DisasterForm({ onDisasterCreated }) {
 
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Location Name
-          </label>
-          <input
-            type="text"
-            name="location_name"
-            value={formData.location_name}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Description
+            Description (Include location details)
           </label>
           <textarea
             name="description"
@@ -102,6 +87,7 @@ export default function DisasterForm({ onDisasterCreated }) {
             onChange={handleChange}
             required
             rows="3"
+            placeholder="Describe the disaster and include location information, e.g., 'Heavy flooding in Manhattan, NYC has affected multiple neighborhoods...'"
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           />
         </div>

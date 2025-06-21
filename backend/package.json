@@ -13,6 +13,7 @@
   "license": "ISC",
   "description": "Backend for Disaster Response Coordination Platform",
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.50.0",
     "axios": "^1.10.0",
     "cors": "^2.8.5",

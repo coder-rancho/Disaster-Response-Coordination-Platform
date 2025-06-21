@@ -1,7 +1,33 @@
 import { supabase } from '../config/supabase.js';
 import axios from 'axios';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 /* Copilot generated this */
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+const extractLocation = async (description) => {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+    const prompt = `Extract the main location from this disaster description. Return ONLY the location name, nothing else.
+    If no specific location is found, respond with "Unknown location".
+    
+    Description: "${description}"`;
+
+    const result = await model.generateContent(prompt);
+    const location = result.response.text().trim();
+    
+    if (location === "Unknown location") {
+      throw new Error('No location found in description');
+    }
+
+    return location;
+  } catch (error) {
+    console.error('Location extraction error:', error);
+    throw new Error('Failed to extract location from description');
+  }
+};
 
 const getCoordinates = async (locationName) => {
   try {
@@ -31,12 +57,13 @@ export const disasterController = {
   // Create a new disaster
   async create(req, res) {
     try {
-      const { title, location_name, description, tags } = req.body;
+      const { title, description, tags } = req.body;
       
-      // Get coordinates from location name
+      // Extract location from description using Gemini
+      const location_name = await extractLocation(description);
+      
+      // Get coordinates from extracted location name
       const location = await getCoordinates(location_name);
-
-      console.log(location);
       
       // Hardcoded owner_id for now (will be replaced with auth)
       const owner_id = 'netrunnerX';
@@ -114,9 +141,12 @@ export const disasterController = {
   async update(req, res) {
     try {
       const { id } = req.params;
-      const { title, location_name, description, tags } = req.body;
+      const { title, description, tags } = req.body;
       
-      // Get coordinates from location name
+      // Extract location from description using Gemini
+      const location_name = await extractLocation(description);
+      
+      // Get coordinates from extracted location name
       const location = await getCoordinates(location_name);
 
       // First check if disaster exists and user owns it
