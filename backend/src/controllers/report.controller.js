@@ -9,15 +9,28 @@ export const reportController = {
       const { disaster_id } = req.params;
       const { content, image_url } = req.body;
       
-      // Verify disaster exists
+      // Verify disaster exists and get its description for image verification
       const { data: disaster, error: disasterError } = await supabase
         .from('disasters')
-        .select('id')
+        .select('id, title, description')
         .eq('id', disaster_id)
         .single();
 
       if (disasterError || !disaster) {
         return res.status(404).json({ error: 'Disaster not found' });
+      }
+
+      // Verify image if provided
+      let verification_status = 'pending';
+      if (image_url) {
+        try {
+          const disasterDescription = `${disaster.title}. ${disaster.description}`;
+          const verificationResult = await imageVerifier.verifyImage(image_url, disasterDescription);
+          verification_status = verificationResult.status;
+        } catch (err) {
+          console.error('Image verification failed:', err);
+          // Continue with report creation even if verification fails
+        }
       }
 
       // Hardcoded user_id for now (will be replaced with auth)
@@ -31,7 +44,7 @@ export const reportController = {
             user_id,
             content,
             image_url,
-            verification_status: 'pending' // Will be updated by the image verification process
+            verification_status
           }
         ])
         .select();
@@ -204,9 +217,10 @@ export const reportController = {
         .eq('key', `image_verification:${imageUrl}:${disaster_id}`)
         .single();
 
-      if (cachedResult) {
-        return res.json(cachedResult.value);
-      }
+        // Todo - Uncomment after testing
+      // if (cachedResult) {
+      //   return res.json(cachedResult.value);
+      // }
 
       // Verify image with disaster context
       const verificationResult = await imageVerifier.verifyImage(imageUrl, disasterDescription);

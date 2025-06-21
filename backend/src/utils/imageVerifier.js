@@ -34,11 +34,23 @@ export const imageVerifier = {
         "Provide a clear yes/no on whether the image appears authentic AND matches the description",
         `
 
-        The output should be a JSON object with the following structure:
         Output format:
         {
           "status": "verified" | "suspicious",
           "details": "Detailed explanation of findings"
+        }
+
+        example response:
+        User: {{Upload an image of a flood in New York City}}
+        Assistant: {
+          "status": "verified",
+          "details": "The image shows a flood in New York City, consistent with the description. No signs of manipulation detected."
+        }
+
+        User: {{Upload an image of a hurricane in California}}
+        Assistant: {
+          "status": "suspicious",
+          "details": "The image shows a hurricane, which is inconsistent with the description of a California disaster. Signs of manipulation detected."
         }
         `,
         {
@@ -52,13 +64,18 @@ export const imageVerifier = {
       const response_text = await result.response.text();
 
       // Parse the response to determine verification status
+      const jsonMatch = response_text.match(/{[\s\S]*}/);
+
+
+      console.log("HEEEELOOO");
+      console.log(jsonMatch);
 
       try {
-        const { status, details } = JSON.parse(response_text);
+        const { status, details } = JSON.parse(jsonMatch ? jsonMatch[0] : response_text);
         return { status, details };
       } catch (parseError) {
         console.error('Failed to parse Gemini response:', parseError);
-        throw new Error('Invalid response format from Gemini');
+        throw new Error('Invalid response format from image verification');
       }
     } catch (error) {
       console.error('Image verification error:', error);

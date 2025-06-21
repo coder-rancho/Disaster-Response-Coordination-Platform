@@ -70,20 +70,23 @@ export default function DisasterReports() {
       setSubmitting(true);
       setError('');
 
-      let verification = null;
-      if (formData.imageUrl) {
+      // Create the report (image will be automatically verified in the backend)
+      const report = await reportService.createReport(disasterId, formData);
+      
+      // If the image is still pending verification, try to verify it separately
+      if (report.image_url && report.verification_status === 'pending') {
         try {
-          verification = await reportService.verifyImage(disasterId, formData.imageUrl);
-        } catch (err) {
-          console.error('Image verification failed:', err);
-          setError('Image verification failed. Report will be submitted without verification.');
+          const verification = await reportService.verifyImage(disasterId, report.image_url);
+          if (verification.status !== 'pending') {
+            // Update the report with the verification result
+            const updatedReport = { ...report, verification_status: verification.status };
+            setReports(prev => prev.map(r => r.id === report.id ? updatedReport : r));
+          }
+        } catch (verifyErr) {
+          console.error('Additional verification failed:', verifyErr);
+          // Don't show error to user since the report was created successfully
         }
       }
-
-      const report = await reportService.createReport(disasterId, {
-        ...formData,
-        verification_status: verification?.status || 'pending'
-      });
 
       setFormData({ content: '', imageUrl: '' });
       setReports(prev => [report, ...prev]);
