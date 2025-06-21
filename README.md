@@ -4,8 +4,16 @@ A comprehensive platform for coordinating disaster response efforts, built with 
 
 ## Demo
 
-Frontend App: [Deployed on vercel](https://disaster-response-coordination-plat-weld.vercel.app/)
+Frontend App: [Deployed on vercel](https://disaster-response-coordination-plat-weld.vercel.app/)  
 Backend App: [Deployed on render](https://disaster-response-coordination-platform-9pmj.onrender.com/api/disasters)
+
+## Documentation
+
+Detailed documentation is available in the `docs` folder:
+
+- [Features Documentation](docs/features.md) - Detailed feature descriptions and capabilities
+- [API Reference](docs/api-reference.md) - Complete API endpoints and usage guide
+- [Copilot Development Notes](docs/copilot-notes.md) - Detailed history of how GitHub Copilot assisted in development
 
 ## Features
 
