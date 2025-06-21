@@ -4,6 +4,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import disasterRoutes from './routes/disaster.routes.js';
+import reportRoutes from './routes/report.routes.js';
 
 dotenv.config();
 
@@ -33,6 +34,9 @@ app.get('/', (req, res) => {
 
 // Use disaster routes
 app.use('/api/disasters', disasterRoutes);
+
+// Use report routes (nested under disasters)
+app.use('/api/disasters/:disaster_id/reports', reportRoutes);
 
 // WebSocket connection
 io.on('connection', (socket) => {
