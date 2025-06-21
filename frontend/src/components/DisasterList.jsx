@@ -1,25 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { disasterService } from '../services/disaster.service';
 
 export default function DisasterList() {
+  const navigate = useNavigate();
   const [disasters, setDisasters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('');
   const [inputValue, setInputValue] = useState('');
 
-  useEffect(() => {
-    loadDisasters();
-
-    // Setup WebSocket listeners
-    disasterService.socket.on('disaster_updated', handleDisasterUpdate);
-
-    return () => {
-      disasterService.socket.off('disaster_updated', handleDisasterUpdate);
-    };
-  }, [filter]);
-
-  const loadDisasters = async () => {
+  const loadDisasters = useCallback(async () => {
     try {
       setLoading(true);
       const data = await disasterService.getAll(filter);
@@ -31,7 +22,18 @@ export default function DisasterList() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter]);
+
+  useEffect(() => {
+    loadDisasters();
+
+    // Setup WebSocket listeners
+    disasterService.socket.on('disaster_updated', handleDisasterUpdate);
+
+    return () => {
+      disasterService.socket.off('disaster_updated', handleDisasterUpdate);
+    };
+  }, [loadDisasters]);
 
   const handleDisasterUpdate = ({ action, disaster, disasterId }) => {
     switch (action) {
@@ -67,6 +69,10 @@ export default function DisasterList() {
     }
   };
 
+  const navigateToReports = (disasterId) => {
+    navigate(`/reports/${disasterId}`);
+  };
+
   if (loading) {
     return <div className="text-center">Loading...</div>;
   }
@@ -100,49 +106,41 @@ export default function DisasterList() {
       )}
 
       <div className="space-y-4">
-        {disasters.map(disaster => (
-          <div
-            key={disaster.id}
-            className="bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow"
-          >
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-xl font-semibold">{disaster.title}</h3>
-                <p className="text-gray-600">{disaster.location_name}</p>
+        {disasters.map((disaster) => (
+          <div key={disaster.id} className="p-4 border rounded-lg shadow-sm bg-white">
+            <div className="flex justify-between items-start mb-2">
+              <h3 className="text-xl font-semibold">{disaster.title}</h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => navigateToReports(disaster.id)}
+                  className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                >
+                  See Reports
+                </button>
+                <button
+                  onClick={() => handleDelete(disaster.id)}
+                  className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                >
+                  Delete
+                </button>
               </div>
             </div>
-            
-            <p className="mt-2 text-gray-700">{disaster.description}</p>
-            
-            <div className="mt-3 flex flex-wrap gap-2">
-              Tags: {disaster.tags.map(tag => (
+            <p className="text-gray-600 mb-2">{disaster.description}</p>
+            <div className="flex flex-wrap gap-2">
+              {disaster.tags?.map((tag, index) => (
                 <span
-                  key={tag}
-                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                  key={index}
+                  className="px-2 py-1 text-sm bg-blue-100 text-blue-800 rounded-full"
                 >
-                  {tag},&nbsp;
+                  {tag}
                 </span>
               ))}
             </div>
-            
             <div className="mt-2 text-sm text-gray-500">
-              Reported by: {disaster.owner_id}
+              Created: {new Date(disaster.created_at).toLocaleString()}
             </div>
-
-            <button
-                onClick={() => handleDelete(disaster.id)}
-                className="text-red-600 hover:text-red-800"
-              >
-                Delete
-              </button>
           </div>
         ))}
-
-        {disasters.length === 0 && (
-          <p className="text-center text-gray-500">
-            No disasters reported yet.
-          </p>
-        )}
       </div>
     </div>
   );
