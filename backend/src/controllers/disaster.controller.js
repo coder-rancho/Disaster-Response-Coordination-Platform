@@ -1,11 +1,42 @@
 import { supabase } from '../config/supabase.js';
+import axios from 'axios';
 
 /* Copilot generated this */
+
+const getCoordinates = async (locationName) => {
+  try {
+    const response = await axios.get(`https://nominatim.openstreetmap.org/search`, {
+      params: {
+        q: locationName,
+        format: 'jsonv2',
+        limit: 1
+      },
+      headers: {
+        'User-Agent': 'Disaster-Response-Platform/1.0'
+      }
+    });
+
+    if (response.data && response.data.length > 0) {
+      const { lat, lon } = response.data[0];
+      // Return in PostGIS format
+      return `SRID=4326;POINT(${lon} ${lat})`;
+    }
+    throw new Error('Location not found');
+  } catch (error) {
+    console.error('Geocoding error:', error);
+    throw new Error('Failed to geocode location');
+  }
+};
 export const disasterController = {
   // Create a new disaster
   async create(req, res) {
     try {
-      const { title, location_name, location, description, tags } = req.body;
+      const { title, location_name, description, tags } = req.body;
+      
+      // Get coordinates from location name
+      const location = await getCoordinates(location_name);
+
+      console.log(location);
       
       // Hardcoded owner_id for now (will be replaced with auth)
       const owner_id = 'netrunnerX';
@@ -83,8 +114,11 @@ export const disasterController = {
   async update(req, res) {
     try {
       const { id } = req.params;
-      const { title, location_name, location, description, tags } = req.body;
+      const { title, location_name, description, tags } = req.body;
       
+      // Get coordinates from location name
+      const location = await getCoordinates(location_name);
+
       // First check if disaster exists and user owns it
       const { data: existing, error: fetchError } = await supabase
         .from('disasters')
