@@ -2,7 +2,7 @@ import axios from 'axios';
 import io from 'socket.io-client';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:3000');
+const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:3000/api');
 
 export const disasterService = {
   socket,
