@@ -1,4 +1,5 @@
 import { supabase } from '../config/supabase.js';
+import { imageVerifier } from '../utils/imageVerifier.js';
 
 /* Copilot generated this */
 export const reportController = {
@@ -169,6 +170,62 @@ export const reportController = {
     } catch (error) {
       console.error('Error deleting report:', error);
       res.status(400).json({ error: error.message });
+    }
+  },
+
+  // Verify an image using Gemini API
+  async verifyImage(req, res) {
+    try {
+      const { disaster_id } = req.params;
+      const { imageUrl } = req.body;
+
+      if (!imageUrl) {
+        return res.status(400).json({ error: 'Image URL is required' });
+      }
+
+      // Verify disaster exists and get its description
+      const { data: disaster, error: disasterError } = await supabase
+        .from('disasters')
+        .select('id, description, title')
+        .eq('id', disaster_id)
+        .single();
+
+      if (disasterError || !disaster) {
+        return res.status(404).json({ error: 'Disaster not found' });
+      }
+
+      // Create a comprehensive description for verification
+      const disasterDescription = `${disaster.title}. ${disaster.description}`;
+
+      // Check cache first
+      const { data: cachedResult } = await supabase
+        .from('cache')
+        .select('value')
+        .eq('key', `image_verification:${imageUrl}:${disaster_id}`)
+        .single();
+
+      if (cachedResult) {
+        return res.json(cachedResult.value);
+      }
+
+      // Verify image with disaster context
+      const verificationResult = await imageVerifier.verifyImage(imageUrl, disasterDescription);
+
+      // Cache the result
+      await supabase
+        .from('cache')
+        .insert([
+          {
+            key: `image_verification:${imageUrl}:${disaster_id}`,
+            value: verificationResult,
+            expires_at: new Date(Date.now() + 3600000).toISOString() // 1 hour cache
+          }
+        ]);
+
+      res.json(verificationResult);
+    } catch (error) {
+      console.error('Error verifying image:', error);
+      res.status(500).json({ error: error.message });
     }
   }
 };

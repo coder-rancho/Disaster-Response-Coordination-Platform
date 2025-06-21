@@ -20,4 +20,7 @@ router.put('/:id', reportController.update);
 // Delete a report
 router.delete('/:id', reportController.delete);
 
+// Verify an image
+router.post('/verify-image', reportController.verifyImage);
+
 export default router;
